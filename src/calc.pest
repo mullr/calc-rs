@@ -1,0 +1,13 @@
+digit = _{ '0' .. '9' }
+int = { digit+ }
+
+op_times = { "*" }
+op_div = { "/" }
+op_plus = { "+" }
+op_minus = { "-" }
+
+mult_expr = { int ~ (op_times | op_div) ~ mult_expr_or_int }
+mult_expr_or_int = _{ mult_expr | int }
+
+add_expr = { mult_expr_or_int ~ (op_plus | op_minus) ~ expr } 
+expr = _{ add_expr | mult_expr_or_int }
