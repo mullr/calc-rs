@@ -24,9 +24,10 @@ enum Expr {
 
 #[derive(Debug)]
 enum CalcParseError {
+    ParseError,
     IntParse,
     UnknownRule,
-    NotEnoughInput
+    NotEnoughInput,
 }
 
 fn to_op(p: pest::iterators::Pair<Rule>) -> Result<Op, CalcParseError> {
@@ -35,16 +36,15 @@ fn to_op(p: pest::iterators::Pair<Rule>) -> Result<Op, CalcParseError> {
         Rule::op_minus => Ok(Op::Minus),
         Rule::op_times => Ok(Op::Times),
         Rule::op_div => Ok(Op::Div),
-        _ => Err(CalcParseError::UnknownRule)
+        _ => Err(CalcParseError::UnknownRule),
     }
 }
 
 fn to_expr(p: pest::iterators::Pair<Rule>) -> Result<Expr, CalcParseError> {
     match p.as_rule() {
-
         Rule::int => match p.as_str().parse::<u32>() {
             Ok(x) => Ok(Expr::Int(x)),
-            Err(_) => Err(CalcParseError::IntParse)
+            Err(_) => Err(CalcParseError::IntParse),
         },
 
         Rule::mult_expr | Rule::add_expr => {
@@ -53,10 +53,16 @@ fn to_expr(p: pest::iterators::Pair<Rule>) -> Result<Expr, CalcParseError> {
             let op = to_op(pairs.next().ok_or(CalcParseError::NotEnoughInput)?)?;
             let rhs = to_expr(pairs.next().ok_or(CalcParseError::NotEnoughInput)?)?;
             Ok(Expr::Binary(op, Box::new(lhs), Box::new(rhs)))
-        },
+        }
 
         _ => Err(CalcParseError::UnknownRule),
     }
+}
+
+fn parse(s: &str) -> Result<Expr, CalcParseError> {
+    let mut pairs = CalcParser::parse(Rule::expr, s).map_err(|_e| CalcParseError::ParseError)?;
+    let p = pairs.next().ok_or(CalcParseError::ParseError)?;
+    to_expr(p)
 }
 
 fn eval(e: &Expr) -> u32 {
@@ -67,14 +73,26 @@ fn eval(e: &Expr) -> u32 {
             &Op::Minus => eval(x) - eval(y),
             &Op::Times => eval(x) * eval(y),
             &Op::Div => eval(x) / eval(y),
-        }
+        },
     }
 }
 
+extern crate rustyline;
+use rustyline::Editor;
+
 fn main() {
-    let pairs = CalcParser::parse(Rule::expr, "1*2+3*4").unwrap();
-    for p in pairs {
-        let e = to_expr(p).unwrap();
-        println!("{:?}, {:?}", e, eval(&e));
+    let mut rl = Editor::<()>::new();
+
+    loop {
+        match rl.readline("> ") {
+            Ok(s) => match parse(&s).map(|e| eval(&e)) {
+                Ok(x) => println!("{}", x),
+                Err(e) => println!("Error: {:?}", e),
+            },
+            Err(e) => {
+                println!("Readline: {:?}", e);
+                break;
+            }
+        }
     }
 }
