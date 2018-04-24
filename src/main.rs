@@ -59,10 +59,22 @@ fn to_expr(p: pest::iterators::Pair<Rule>) -> Result<Expr, CalcParseError> {
     }
 }
 
+fn eval(e: &Expr) -> u32 {
+    match e {
+        &Expr::Int(x) => x,
+        &Expr::Binary(ref op, ref x, ref y) => match op {
+            &Op::Plus => eval(x) + eval(y),
+            &Op::Minus => eval(x) - eval(y),
+            &Op::Times => eval(x) * eval(y),
+            &Op::Div => eval(x) / eval(y),
+        }
+    }
+}
+
 fn main() {
     let pairs = CalcParser::parse(Rule::expr, "1*2+3*4").unwrap();
     for p in pairs {
-        let e = to_expr(p);
-        println!("{:?}", e);
+        let e = to_expr(p).unwrap();
+        println!("{:?}, {:?}", e, eval(&e));
     }
 }
