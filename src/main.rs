@@ -42,10 +42,10 @@ fn to_op(p: pest::iterators::Pair<Rule>) -> Result<Op, CalcParseError> {
 fn to_expr(p: pest::iterators::Pair<Rule>) -> Result<Expr, CalcParseError> {
     match p.as_rule() {
 
-        Rule::int => p.as_str()
-            .parse::<u32>()
-            .map(|x| Expr::Int(x))
-            .map_err(|e| CalcParseError::IntParse),
+        Rule::int => match p.as_str().parse::<u32>() {
+            Ok(x) => Ok(Expr::Int(x)),
+            Err(_) => Err(CalcParseError::IntParse)
+        },
 
         Rule::mult_expr | Rule::add_expr => {
             let mut pairs = p.into_inner();
