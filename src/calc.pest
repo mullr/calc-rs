@@ -1,5 +1,7 @@
+whitespace = _{ " " | "\t" |  "\r" | "\n" }
+
 digit = _{ '0' .. '9' }
-int = { digit+ }
+int = @{ digit+ }
 
 op_times = { "*" }
 op_div = { "/" }
